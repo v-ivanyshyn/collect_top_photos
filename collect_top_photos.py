@@ -72,27 +72,22 @@ destPath = sys.argv[2]
 print 'source path:', sourcePath
 print 'destination path:', destPath
 for (dirpath, dirnames, filenames) in os.walk(sourcePath):
-    def alreadyExists(filename):
-        # for existingFilename in sourcePhotos:
-        #     if existingFilename.endswith(filename):
-        #         return True
-        return False
-    filesInDirectory = [os.path.join(dirpath, f) for f in filenames if f.endswith('.jpg') and not alreadyExists(f)]
+    filesInDirectory = [os.path.join(dirpath, f) for f in filenames if (f.endswith('.jpg') or f.endswith('.JPG'))]
     sourcePhotos.extend(filesInDirectory)
 print len(sourcePhotos), 'photos found'
 
 goodPhotos = []
 for i, f in enumerate(sourcePhotos):
     sys.stdout.write('\r')
-    sys.stdout.write('processing {0} of {1} photos...'.format(i + 1, len(sourcePhotos)))
+    sys.stdout.write('processing {0} of {1} photos: {2}'.format(i + 1, len(sourcePhotos), f))
     sys.stdout.flush()
 
     rating = readXmpRating(f)
     if not rating:
         rating = readMetadataRating(f)
-    if rating == GOOD_RATING:
+    if rating >= GOOD_RATING:
         goodPhotos.append(f)
-    elif rating == GOOD_RATING_WITH_KEYWORDS:
+    elif rating >= GOOD_RATING_WITH_KEYWORDS:
         keywords = readMetadataKeywords(f)
         if not keywords:
             keywords = readXmpKeywords(f)
@@ -102,8 +97,6 @@ for i, f in enumerate(sourcePhotos):
 sys.stdout.write('\r')
 
 print len(goodPhotos), 'photos with good ratings and keywords'
-# for f in goodPhotos:
-#     print '   ', f
 
 for sourceFilePath in goodPhotos:
     sourceHash = hashlib.md5(str(dateFromExif(sourceFilePath)))
