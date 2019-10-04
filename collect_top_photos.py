@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, shutil, subprocess, mmap, exifread, xattr, biplist, re, hashlib
+from xml.dom import minidom
 
 GOOD_RATING = 5
 GOOD_RATING_WITH_KEYWORDS = 4
@@ -24,6 +25,13 @@ def readXmpData(filename):
 def readXmpRating(filename):
     xmpData = readXmpData(filename)
     if xmpData:
+        xmlData = minidom.parseString(xmpData)
+        if xmlData:
+            try:
+                rating = xmlData.getElementsByTagName('xmp:Rating')[0].childNodes[0].data
+                return int(rating)
+            except:
+                pass
         xmpRatingPos = xmpData.find('xmp:Rating')
         if xmpRatingPos != -1:
             rating = xmpData[(xmpRatingPos + len('xmp:Rating="')):(xmpRatingPos + len('xmp:Rating="#'))]
@@ -68,7 +76,11 @@ def filenameForPhoto(filename):
 
 sourcePhotos = []
 sourcePath = sys.argv[1]
+if not sourcePath:
+    sourcePath = raw_input("Please enter source directory: ")
 destPath = sys.argv[2]
+if not destPath:
+    destPath = raw_input("Please enter destination directory: ")
 print 'source path:', sourcePath
 print 'destination path:', destPath
 for (dirpath, dirnames, filenames) in os.walk(sourcePath):
@@ -85,6 +97,8 @@ for i, f in enumerate(sourcePhotos):
     rating = readXmpRating(f)
     if not rating:
         rating = readMetadataRating(f)
+    if not rating:
+        rating = 0
     if rating >= GOOD_RATING:
         goodPhotos.append(f)
     elif rating >= GOOD_RATING_WITH_KEYWORDS:
